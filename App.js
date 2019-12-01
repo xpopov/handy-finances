@@ -17,54 +17,130 @@ import {
 } from 'react-native';
 
 import {
-  Header,
-  LearnMoreLinks,
   Colors,
   DebugInstructions,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
-const App: () => React$Node = () => {
+import Icon from 'react-native-vector-icons/FontAwesome5';
+
+import Amplify from '@aws-amplify/core'
+import {Authenticator, Greetings, SignIn, SignUp, ConfirmSignIn, ConfirmSignUp, 
+  RequireNewPassword, ForgotPassword, VerifyContact, Loading, TOTPSetup} from 'aws-amplify-react-native'
+import awsconfig from './aws-exports'
+
+Amplify.configure({
+  ...awsconfig,
+  Analytics: {
+    disabled: true,
+  },
+})
+
+import { API, graphqlOperation } from 'aws-amplify';
+
+const ListAccountsQuery = `
+  query {
+    listAccounts {
+      items {
+        id name description
+      }
+    }
+  }
+  `;
+
+class CustomAuthenticator extends Authenticator {
+  constructor(props) {
+    super(props);
+  }
+}
+
+class ListAccounts extends React.Component {
+  state = {
+    accounts: []
+  }
+  async componentDidMount() {
+    try {
+      const accounts = await API.graphql(graphqlOperation(ListAccountsQuery));
+      console.log('accounts: ', accounts);
+      console.log('items: ', accounts.data.listAccounts.items);
+      this.setState({ accounts: accounts.data.listAccounts.items });
+    } catch (err) {
+      console.log('error: ', err);
+    }
+  }
+  render() {
+    return (
+      <View style={styles.container}>
+        {this.state.accounts.map((account, index) => (
+          <View key={index} style={styles.account}>
+            <Text style={styles.name}>{account.name}</Text>
+            <Text style={styles.description}>{account.description}</Text>
+          </View>
+        ))}
+      </View>
+    );
+  }
+}
+
+const App = (props) => {
+  console.log(props);
+  const loggedIn = props && props.authState == "signedIn";
+  if (loggedIn)
+  return (
+    <>
+      <View style={styles.sectionTopContainer}>
+        <Icon name="comments" size={30} color="#900" />
+        <Text style={styles.sectionTitle}>Accounts</Text>
+        <ListAccounts />
+      </View>
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>See Your Changes</Text>
+        <Text style={styles.sectionDescription}>
+          <ReloadInstructions />
+        </Text>
+      </View>
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Debug</Text>
+        <Text style={styles.sectionDescription}>
+          <DebugInstructions />
+        </Text>
+      </View>
+    </>
+  );
+  else return null;
+};
+
+const AppWithAuth: () => React$Node = () => {
   return (
     <>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView>
         <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header />
+            contentInsetAdjustmentBehavior="automatic"
+            style={styles.scrollView}>
+          {/* <Header /> */}
           {global.HermesInternal == null ? null : (
             <View style={styles.engine}>
               <Text style={styles.footer}>Engine: Hermes</Text>
             </View>
           )}
           <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One - check3</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
+            <CustomAuthenticator 
+              usernameAttributes="email"
+              onStateChange={ (authState) => console.log(authState) }
+              hideDefault={true}>
+              <Greetings/>
+              <SignIn/>
+              <ConfirmSignIn/>
+              <RequireNewPassword/>
+              <SignUp/>
+              <ConfirmSignUp/>
+              <VerifyContact/>
+              <ForgotPassword/>
+              {/* <TOTPSetup/> */}
+              <Loading/>
+              <App/>
+            </CustomAuthenticator>
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -82,6 +158,10 @@ const styles = StyleSheet.create({
   },
   body: {
     backgroundColor: Colors.white,
+  },
+  sectionTopContainer: {
+    marginTop: 12,
+    paddingHorizontal: 24,
   },
   sectionContainer: {
     marginTop: 32,
@@ -111,4 +191,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default AppWithAuth;

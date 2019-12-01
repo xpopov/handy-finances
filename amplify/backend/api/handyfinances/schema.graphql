@@ -1,0 +1,19 @@
+type Account @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  name: String!
+  description: String
+  snapshots: [Snapshot] @connection(name: "AccountSnapshots")
+}
+type Snapshot @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  title: String
+  comment: String
+  calculatedAt: AWSDateTime!
+  data: [SnapshotData] @connection(name: "SnapshotSnapshotDatas")
+  account: Account @connection(name: "AccountSnapshots")
+}
+type SnapshotData @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  balance: Float!
+  snapshot: Snapshot @connection(name: "SnapshotSnapshotDatas")
+}

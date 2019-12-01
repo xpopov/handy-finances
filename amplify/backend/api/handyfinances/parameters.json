@@ -1,0 +1,11 @@
+{
+    "AppSyncApiName": "handyfinances",
+    "DynamoDBBillingMode": "PAY_PER_REQUEST",
+    "DynamoDBEnableServerSideEncryption": "false",
+    "AuthCognitoUserPoolId": {
+        "Fn::GetAtt": [
+            "authhandyfinancesf5bca3f7",
+            "Outputs.UserPoolId"
+        ]
+    }
+}

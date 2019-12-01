@@ -1,0 +1,20 @@
+{
+    "test": {
+        "awscloudformation": {
+            "AuthRoleName": "amplify-handy-finances-test-165603-authRole",
+            "UnauthRoleArn": "arn:aws:iam::394396689516:role/amplify-handy-finances-test-165603-unauthRole",
+            "AuthRoleArn": "arn:aws:iam::394396689516:role/amplify-handy-finances-test-165603-authRole",
+            "Region": "us-east-1",
+            "DeploymentBucketName": "amplify-handy-finances-test-165603-deployment",
+            "UnauthRoleName": "amplify-handy-finances-test-165603-unauthRole",
+            "StackName": "amplify-handy-finances-test-165603",
+            "StackId": "arn:aws:cloudformation:us-east-1:394396689516:stack/amplify-handy-finances-test-165603/52c969b0-1442-11ea-892e-0a803f1342f3",
+            "AmplifyAppId": "d2fcje39hrwft8"
+        },
+        "categories": {
+            "auth": {
+                "handyfinancesf5bca3f7": {}
+            }
+        }
+    }
+}
