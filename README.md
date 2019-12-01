@@ -1,3 +1,13 @@
+## Setting up AWS Cognito and AppSync
+
+`aws configure`
+
+`aws init`
+
+`aws add auth` to add Cognito pool
+
+`aws add api` to add GraphQL for AppSync
+
 ## Installation
 
 Install Android Studio and Java binaries.
