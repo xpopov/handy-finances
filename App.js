@@ -8,11 +8,14 @@
 
 import React from 'react';
 import {
+  Button,
+  FlatList,
   SafeAreaView,
   StyleSheet,
   ScrollView,
   View,
   Text,
+  TextInput,
   StatusBar,
 } from 'react-native';
 
@@ -46,7 +49,40 @@ const ListAccountsQuery = `
       }
     }
   }
-  `;
+`;
+const AddAccountQuery = `
+  mutation ($name: String! $description: String) {
+    createAccount(input: {
+      name: $name
+      description: $description
+    }) {
+      id name description
+    }
+  }
+`;
+const UpdateAccountQuery = `
+  mutation ($id: ID! $name: String! $description: String) {
+    updateAccount(input: {
+      id: $id
+      name: $name
+      description: $description
+    }) {
+      id name description
+    }
+  }
+`;
+
+function removeEmptyStringElements(obj) {
+  for (var prop in obj) {
+    if (typeof obj[prop] === 'object') {// dive deeper in
+      removeEmptyStringElements(obj[prop]);
+    } else if(obj[prop] === '') {// delete elements that are empty strings
+      // delete obj[prop];
+      obj[prop] = '\0';
+    }
+  }
+  return obj;
+}
 
 class CustomAuthenticator extends Authenticator {
   constructor(props) {
@@ -54,9 +90,22 @@ class CustomAuthenticator extends Authenticator {
   }
 }
 
+const AccountListItem = (props) => (
+  <View key={props.index} style={styles.account}>
+    <Text onPress={ () => props.handleClick(props.item) } style={styles.name}>{props.item.name}</Text>
+    <Text style={styles.description}>{props.item.description}</Text>
+  </View>
+)
+
 class ListAccounts extends React.Component {
   state = {
+    id: null,
+    name: '',
+    description: '',
     accounts: []
+  }
+  resetEdit() {
+    this.setState({ id: null, name: '', description: ''});
   }
   async componentDidMount() {
     try {
@@ -67,17 +116,91 @@ class ListAccounts extends React.Component {
     } catch (err) {
       console.log('error: ', err);
     }
-  }
+  };
+  onChangeText = (key, val) => {
+    this.setState({ [key]: val });
+  };
+  handleNavigateToAccount = (item) => {
+    this.setState({ id: item.id, name: item.name, description: item.description })
+  };
+  addAccount = async () => {
+    if (this.state.name === '') return;
+    const account = removeEmptyStringElements({ name: this.state.name, description: this.state.description });
+    try {
+      const accounts = [...this.state.accounts, account];
+      this.setState({ accounts, name: '', description: '' });
+      console.log('accounts: ', accounts);
+      await API.graphql(graphqlOperation(AddAccountQuery, account));
+      console.log('success');
+      this.resetEdit();
+    } catch (err) {
+      console.log('error: ', err);
+    }
+  };
+  updateAccount = async () => {
+    if (this.state.id === '' || this.state.name === '') return;
+    const account = removeEmptyStringElements({ id: this.state.id, name: this.state.name, description: this.state.description });
+    try {
+      var accounts = this.state.accounts;
+      accounts = accounts.map((a) => {
+        if (a.id == this.state.id) {
+          a.name = this.state.name;
+          a.description = this.state.description;
+        }
+        return a;
+      });
+      this.setState({ accounts, name: '', description: '' });
+      console.log('accounts: ', accounts);
+      await API.graphql(graphqlOperation(UpdateAccountQuery, account));
+      console.log('success');
+      this.resetEdit();
+    } catch (err) {
+      console.log('error: ', err);
+    }  
+  };
   render() {
     return (
-      <View style={styles.container}>
-        {this.state.accounts.map((account, index) => (
-          <View key={index} style={styles.account}>
-            <Text style={styles.name}>{account.name}</Text>
-            <Text style={styles.description}>{account.description}</Text>
-          </View>
-        ))}
-      </View>
+      <>
+        <View style={styles.container}>
+          <TextInput
+                style={styles.input}
+                value={this.state.name}
+                onChangeText={val => this.onChangeText('name', val)}
+                placeholder="Name"
+          />
+          <TextInput
+                style={styles.input}
+                value={this.state.description}
+                onChangeText={val => this.onChangeText('description', val)}
+                placeholder="Description"
+          />
+          {
+            this.state.id == null ? 
+              (<Button onPress={this.addAccount} title="Add Account" color="#eeaa55" />):
+              (<Button onPress={this.updateAccount} title="Update Account" color="#eeaa55" />)
+          }
+          
+        </View>
+        <View style={styles.container}>
+          <FlatList
+            data={this.state.accounts}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <AccountListItem
+                handleClick={ (item) => { this.handleNavigateToAccount(item)} }
+                onCaretPress={this.handleDrillDown}
+                item={item}
+              />
+            )}
+          />
+          { /* this.state.accounts.map((account, index) => (
+            <View key={index} style={styles.account}>
+              <Text style={styles.name}>{account.name}</Text>
+              <Text style={styles.description}>{account.description}</Text>
+            </View>
+          )) */}
+        </View>
+      </>
     );
   }
 }
@@ -158,9 +281,15 @@ const styles = StyleSheet.create({
   },
   body: {
     backgroundColor: Colors.white,
+    paddingTop: 24,
+    paddingBottom: 24
+  },
+  container: {
+    marginTop: 10,
+    marginBottom: 10
   },
   sectionTopContainer: {
-    marginTop: 12,
+    marginTop: 150,
     paddingHorizontal: 24,
   },
   sectionContainer: {
