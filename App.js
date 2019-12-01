@@ -30,7 +30,17 @@ import Icon from 'react-native-vector-icons/FontAwesome5';
 import Amplify from '@aws-amplify/core'
 import {Authenticator, Greetings, SignIn, SignUp, ConfirmSignIn, ConfirmSignUp, 
   RequireNewPassword, ForgotPassword, VerifyContact, Loading, TOTPSetup} from 'aws-amplify-react-native'
-import awsconfig from './aws-exports'
+
+import awsconfig from './aws-exports';
+import { listAccounts } from './src/graphql/queries';
+import { createAccount, deleteAccount } from './src/graphql/mutations';
+import { onCreateAccount, onUpdateAccount, onDeleteAccount } from './src/graphql/subscriptions';
+
+import gql from 'graphql-tag';
+import { API, Auth, graphqlOperation } from 'aws-amplify';
+import AWSAppSyncClient, { buildSubscription } from 'aws-appsync';
+import { Rehydrated, graphqlMutation } from 'aws-appsync-react';
+import { compose, graphql, ApolloProvider } from 'react-apollo';
 
 Amplify.configure({
   ...awsconfig,
@@ -39,9 +49,20 @@ Amplify.configure({
   },
 })
 
-import { API, graphqlOperation } from 'aws-amplify';
+// let token = await Auth.currentSession().then(session => session.getIdToken().getJwtToken()) // Cognito
 
-import { graphqlMutation } from 'aws-appsync-react';
+const client = new AWSAppSyncClient({
+  url: awsconfig.aws_appsync_graphqlEndpoint,
+  region: awsconfig.aws_appsync_region,
+  auth: {
+    type: awsconfig.aws_appsync_authenticationType,
+    jwtToken: (async () =>  {
+      const currentSession = await Auth.currentSession();
+      return currentSession.getIdToken().getJwtToken()
+    })
+    // apiKey: awsconfig.aws_appsync_apiKey
+  }
+})
 
 const ListAccountsQuery = `
   query {
@@ -100,25 +121,28 @@ const AccountListItem = (props) => (
 )
 
 class ListAccounts extends React.Component {
-  state = {
-    id: null,
-    name: '',
-    description: '',
-    accounts: []
+  constructor(props) {
+    super(props);
+    this.state = {
+      id: null,
+      name: '',
+      description: '',
+      accounts: props ? props.accounts : []
+    }
   }
   resetEdit() {
     this.setState({ id: null, name: '', description: ''});
   }
-  async componentDidMount() {
-    try {
-      const accounts = await API.graphql(graphqlOperation(ListAccountsQuery));
-      console.log('accounts: ', accounts);
-      console.log('items: ', accounts.data.listAccounts.items);
-      this.setState({ accounts: accounts.data.listAccounts.items });
-    } catch (err) {
-      console.log('error: ', err);
-    }
-  };
+  // async componentDidMount() {
+  //   try {
+  //     const accounts = await API.graphql(graphqlOperation(ListAccountsQuery));
+  //     console.log('accounts: ', accounts);
+  //     console.log('items: ', accounts.data.listAccounts.items);
+  //     this.setState({ accounts: accounts.data.listAccounts.items });
+  //   } catch (err) {
+  //     console.log('error: ', err);
+  //   }
+  // };
   onChangeText = (key, val) => {
     this.setState({ [key]: val });
   };
@@ -207,73 +231,69 @@ class ListAccounts extends React.Component {
   }
 }
 
-graphqlMutation(CreateAccountQuery, ListAccountsQuery, 'Account')
 
-const App = (props) => {
-  console.log(props);
-  const loggedIn = props && props.authState == "signedIn";
-  if (loggedIn)
-  return (
-    <>
-      <View style={styles.sectionTopContainer}>
-        <Icon name="comments" size={30} color="#900" />
-        <Text style={styles.sectionTitle}>Accounts</Text>
-        <ListAccounts />
-      </View>
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>See Your Changes</Text>
-        <Text style={styles.sectionDescription}>
-          <ReloadInstructions />
-        </Text>
-      </View>
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Debug</Text>
-        <Text style={styles.sectionDescription}>
-          <DebugInstructions />
-        </Text>
-      </View>
-    </>
-  );
-  else return null;
+class App extends React.Component {
+  constructor(props) {
+    console.log(props);
+    super(props);
+    this.state = { 
+      accounts: props.accounts,
+      loggedIn: props && (props.authState == "signedIn" || props.authState == "loading"),
+      data: props.data
+    };
+  }
+  
+  componentDidMount() {
+    // console.log(this.state.data)
+    this.state.data.subscribeToMore(
+      buildSubscription(gql(onUpdateAccount), gql(listAccounts))
+    )
+  }
+
+  render() {
+    // console.log({client});
+    if (this.state.loggedIn)
+    return (
+      <>
+        <View style={styles.sectionTopContainer}>
+          <Icon name="comments" size={30} color="#900" />
+          <Text style={styles.sectionTitle}>Accounts</Text>
+          <ListAccounts accounts={this.state.accounts} />
+        </View>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>See Your Changes</Text>
+          <Text style={styles.sectionDescription}>
+            <ReloadInstructions />
+          </Text>
+        </View>
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionTitle}>Debug</Text>
+          <Text style={styles.sectionDescription}>
+            <DebugInstructions />
+          </Text>
+        </View>
+      </>
+    );
+    else return null;
+  }
 };
 
-const AppWithAuth: () => React$Node = () => {
-  return (
-    <>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-            contentInsetAdjustmentBehavior="automatic"
-            style={styles.scrollView}>
-          {/* <Header /> */}
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <CustomAuthenticator 
-              usernameAttributes="email"
-              onStateChange={ (authState) => console.log(authState) }
-              hideDefault={true}>
-              <Greetings/>
-              <SignIn/>
-              <ConfirmSignIn/>
-              <RequireNewPassword/>
-              <SignUp/>
-              <ConfirmSignUp/>
-              <VerifyContact/>
-              <ForgotPassword/>
-              {/* <TOTPSetup/> */}
-              <Loading/>
-              <App/>
-            </CustomAuthenticator>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </>
-  );
-};
+const AppSynced = compose(
+  // graphqlMutation(gql(onUpdateAccount), gql(listAccounts), 'ListAccounts'),
+  graphql(
+    gql(listAccounts), 
+    {
+      options: {
+        fetchPolicy: "cache-and-network"
+      },
+      props: props => ({
+        accounts: props.data.listAccounts ? props.data.listAccounts.items : [],
+        data: props.data
+      })
+    }
+  )
+)(App);
+
 
 const styles = StyleSheet.create({
   scrollView: {
@@ -285,8 +305,8 @@ const styles = StyleSheet.create({
   },
   body: {
     backgroundColor: Colors.white,
-    paddingTop: 24,
-    paddingBottom: 24
+    paddingTop: 150,
+    paddingBottom: 150
   },
   container: {
     marginTop: 10,
@@ -324,4 +344,52 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AppWithAuth;
+
+
+// () => React$Node
+export default class AppWithAuth extends React.Component {
+  constructor(props) {
+    console.log(props);
+    super(props);
+  }
+
+  render() {
+    return (
+      <ApolloProvider client={client}>
+        <Rehydrated>
+          <StatusBar barStyle="dark-content" />
+          <SafeAreaView>
+            <ScrollView
+                contentInsetAdjustmentBehavior="automatic"
+                style={styles.scrollView}>
+              {/* <Header /> */}
+              {global.HermesInternal == null ? null : (
+                <View style={styles.engine}>
+                  <Text style={styles.footer}>Engine: Hermes</Text>
+                </View>
+              )}
+              <View style={styles.body}>
+                <CustomAuthenticator 
+                  usernameAttributes="email"
+                  onStateChange={ (authState) => console.log(authState) }
+                  hideDefault={true}>
+                  <SignIn/>
+                  <ConfirmSignIn/>
+                  <RequireNewPassword/>
+                  <SignUp/>
+                  <ConfirmSignUp/>
+                  <VerifyContact/>
+                  <ForgotPassword/>
+                  {/* <TOTPSetup/> */}
+                  <Greetings/>
+                  <Loading/>
+                  <AppSynced/>
+                </CustomAuthenticator>
+              </View>
+            </ScrollView>
+          </SafeAreaView>
+        </Rehydrated>
+      </ApolloProvider>
+    );
+  }
+};
