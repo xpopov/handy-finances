@@ -41,6 +41,8 @@ Amplify.configure({
 
 import { API, graphqlOperation } from 'aws-amplify';
 
+import { graphqlMutation } from 'aws-appsync-react';
+
 const ListAccountsQuery = `
   query {
     listAccounts {
@@ -204,6 +206,8 @@ class ListAccounts extends React.Component {
     );
   }
 }
+
+graphqlMutation(CreateAccountQuery, ListAccountsQuery, 'Account')
 
 const App = (props) => {
   console.log(props);

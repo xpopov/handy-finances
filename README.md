@@ -6,29 +6,31 @@ It uses AWS AppSync to quickly syncronize data between several devices.
 
 # Configuring and running
 
-## Setting up AWS Cognito and AppSync
-
-You will need to have your own instances of AWS servces set up.
-
-Clone this project to some directory and then:
-
-`aws configure`
-
-`aws init`
-
-`aws add auth` to add Cognito pool
-
-`aws add api` to add GraphQL for AppSync
-
-`aws push` to push changes to AWS servers
-
 ## Installation
 
 Install Android Studio and Java binaries.
 
 Make sure you have installed NodeJs, NPM.
 
-Install React Native CLI: `npm install react-native-cli --global`
+Install React Native CLI: `npm install -g react-native-cli`
+
+## Setting up AWS Cognito and AppSync
+
+You will need to have your own instances of AWS AppSync set up.
+
+Clone this project to some directory and then:
+
+`npm install -g @aws-amplify/cli`
+
+`amplify configure`
+
+`amplify init`
+
+`amplify add auth` to add Cognito pool
+
+`amplify add api` to add GraphQL for AppSync
+
+`amplify push` to push changes to AWS servers
 
 ## Running
 
