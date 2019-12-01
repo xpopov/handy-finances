@@ -20,6 +20,8 @@ Clone this project to some directory and then:
 
 `aws add api` to add GraphQL for AppSync
 
+`aws push` to push changes to AWS servers
+
 ## Installation
 
 Install Android Studio and Java binaries.
