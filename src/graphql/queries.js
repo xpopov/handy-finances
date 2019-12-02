@@ -6,6 +6,7 @@ export const getAccount = `query GetAccount($id: ID!) {
     id
     name
     description
+    owner
     snapshots {
       items {
         id
@@ -16,7 +17,6 @@ export const getAccount = `query GetAccount($id: ID!) {
       }
       nextToken
     }
-    owner
   }
 }
 `;
@@ -30,10 +30,10 @@ export const listAccounts = `query ListAccounts(
       id
       name
       description
+      owner
       snapshots {
         nextToken
       }
-      owner
     }
     nextToken
   }
@@ -57,10 +57,10 @@ export const getSnapshot = `query GetSnapshot($id: ID!) {
       id
       name
       description
+      owner
       snapshots {
         nextToken
       }
-      owner
     }
     owner
   }

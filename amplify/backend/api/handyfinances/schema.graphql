@@ -1,9 +1,10 @@
-type Account @model @auth(rules: [{allow: owner}]) {
+type Account @model(subscriptions: null) @auth(rules: [{allow: owner}]) {
   id: ID!
   name: String!
   description: String
   snapshots: [Snapshot] @connection(name: "AccountSnapshots")
 }
+
 type Snapshot @model @auth(rules: [{allow: owner}]) {
   id: ID!
   title: String
@@ -12,8 +13,15 @@ type Snapshot @model @auth(rules: [{allow: owner}]) {
   data: [SnapshotData] @connection(name: "SnapshotSnapshotDatas")
   account: Account @connection(name: "AccountSnapshots")
 }
+
 type SnapshotData @model @auth(rules: [{allow: owner}]) {
   id: ID!
   balance: Float!
   snapshot: Snapshot @connection(name: "SnapshotSnapshotDatas")
+}
+
+type Subscription {
+  onCreateAccount: Account @aws_subscribe(mutations: ["createAccount"])
+
+  onUpdateAccount(id: ID!, owner: String!): Account @aws_subscribe(mutations: ["updateAccount"])
 }

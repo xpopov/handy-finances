@@ -9,6 +9,7 @@ export const createAccount = `mutation CreateAccount(
     id
     name
     description
+    owner
     snapshots {
       items {
         id
@@ -19,7 +20,6 @@ export const createAccount = `mutation CreateAccount(
       }
       nextToken
     }
-    owner
   }
 }
 `;
@@ -31,6 +31,7 @@ export const updateAccount = `mutation UpdateAccount(
     id
     name
     description
+    owner
     snapshots {
       items {
         id
@@ -41,7 +42,6 @@ export const updateAccount = `mutation UpdateAccount(
       }
       nextToken
     }
-    owner
   }
 }
 `;
@@ -53,6 +53,7 @@ export const deleteAccount = `mutation DeleteAccount(
     id
     name
     description
+    owner
     snapshots {
       items {
         id
@@ -63,7 +64,6 @@ export const deleteAccount = `mutation DeleteAccount(
       }
       nextToken
     }
-    owner
   }
 }
 `;
@@ -88,10 +88,10 @@ export const createSnapshot = `mutation CreateSnapshot(
       id
       name
       description
+      owner
       snapshots {
         nextToken
       }
-      owner
     }
     owner
   }
@@ -118,10 +118,10 @@ export const updateSnapshot = `mutation UpdateSnapshot(
       id
       name
       description
+      owner
       snapshots {
         nextToken
       }
-      owner
     }
     owner
   }
@@ -148,10 +148,10 @@ export const deleteSnapshot = `mutation DeleteSnapshot(
       id
       name
       description
+      owner
       snapshots {
         nextToken
       }
-      owner
     }
     owner
   }

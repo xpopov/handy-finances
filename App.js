@@ -123,11 +123,20 @@ const AccountListItem = (props) => (
 class ListAccounts extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
+    this.state = this.updateState(props);
+  }
+  updateState(props) {
+    return {
       id: null,
       name: '',
       description: '',
       accounts: props ? props.accounts : []
+    };
+  }
+  componentDidUpdate(prevProps) {
+    if(prevProps.accounts !== this.props.accounts) {
+      // this.setState({value: this.props.value});
+      this.setState(this.updateState(this.props));
     }
   }
   resetEdit() {
@@ -185,6 +194,7 @@ class ListAccounts extends React.Component {
     }  
   };
   render() {
+    console.log(this.state.accounts);
     return (
       <>
         <View style={styles.container}>
@@ -234,24 +244,57 @@ class ListAccounts extends React.Component {
 
 class App extends React.Component {
   constructor(props) {
-    console.log(props);
+    console.log(props.data);
+    console.log(props.data.listAccounts);
     super(props);
-    this.state = { 
+    this.state = {
       accounts: props.accounts,
       loggedIn: props && (props.authState == "signedIn" || props.authState == "loading"),
-      data: props.data
+      // data: props.data
     };
   }
   
-  componentDidMount() {
+  async componentDidMount() {
     // console.log(this.state.data)
-    this.state.data.subscribeToMore(
-      buildSubscription(gql(onUpdateAccount), gql(listAccounts))
-    )
+    console.log(buildSubscription(gql(onUpdateAccount), gql(listAccounts)));
+    session = await Auth.currentSession();
+    owner = session && session.getIdToken().payload.sub;
+    console.log(owner);
+    if (this.props && this.props.data) {
+      options = buildSubscription(gql(onCreateAccount), gql(listAccounts));
+      options = { ...options,
+        variables: {
+          // owner: owner
+        }
+      };
+      console.log(options);
+      // this.props.data.subscribeToMore(options);
+
+      // options = buildSubscription(gql(onUpdateAccount), gql(listAccounts));
+      // options = { ...options,
+      //   variables: {
+      //     owner: owner
+      //   }
+      // };
+      // this.state.data.subscribeToMore(options);
+    }
+
+    this.createItemListener = API.graphql(
+      graphqlOperation(onCreateAccount)
+    ).subscribe({
+      next: updateItemResult => {
+        // console.log(updateItemResult);
+        console.log("updateItemResult from subscription", JSON.stringify(updateItemResult.value.data, null, 2));
+        const account = updateItemResult.value.data.onCreateAccount;
+        const accounts = [...this.state.accounts, account];
+        // console.log(accounts);
+        this.props.accounts = [...this.props.accounts, account];
+        this.setState({ accounts: accounts });
+      }
+    });
   }
 
   render() {
-    // console.log({client});
     if (this.state.loggedIn)
     return (
       <>
@@ -278,7 +321,7 @@ class App extends React.Component {
   }
 };
 
-const AppSynced = compose(
+const AppSynced = //compose(
   // graphqlMutation(gql(onUpdateAccount), gql(listAccounts), 'ListAccounts'),
   graphql(
     gql(listAccounts), 
@@ -291,7 +334,7 @@ const AppSynced = compose(
         data: props.data
       })
     }
-  )
+  //)
 )(App);
 
 
