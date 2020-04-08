@@ -124,7 +124,7 @@ class App extends React.Component {
       // data: props.data
     };
   }
-  
+
   async componentDidMount() {
     // console.log(this.state.data)
     // console.log(buildSubscription(gql(onUpdateAccount), gql(listAccounts)));
@@ -188,19 +188,17 @@ class App extends React.Component {
     // });
   }
 
-  render = () => {
+  render() {
     console.log("App render");
     console.log(this.props.authState);
-    if (this.props.authState)
+    if (this.props.authState == "signedIn")
       return (
-        <ApplicationList loggedIn={this.props.authState}/>
+        props.children
       );
     else
       return null;
   }
-};
-
-const AppSynced = App;
+}
 
 export default class AppWithAuth extends React.Component {
   constructor(props) {
@@ -231,7 +229,7 @@ export default class AppWithAuth extends React.Component {
               <View style={styles.body}>
                 <CustomAuthenticator 
                   usernameAttributes="email"
-                  onStateChange={ (authState) => { console.log(authState); this.setState({signInState: authState}); } }
+                  onStateChange={ (signInState) => { console.log(signInState); this.setState({signInState}); } }
                   hideDefault={true}>
                   <SignIn/>
                   <ConfirmSignIn/>
@@ -243,7 +241,9 @@ export default class AppWithAuth extends React.Component {
                   {/* <TOTPSetup/> */}
                   <Greetings/>
                   <Loading/>
-                  <AppSynced authState={this.state.signInState} />
+                  <App authState={this.state.signInState}>
+                    <ApplicationList/>
+                  </App>
                 </CustomAuthenticator>
               </View>
             </ScrollView>

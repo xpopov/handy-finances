@@ -142,7 +142,7 @@ class ListAccounts extends React.Component {
                 placeholder="Description"
           />
           {
-            this.state.id == null ? 
+            this.state.id == null ?
               (<Button onPress={this.addAccount} title="Add Account" color="#eeaa55" />):
               (<Button onPress={this.updateAccount} title="Update Account" color="#eeaa55" />)
           }
@@ -175,9 +175,10 @@ class ListAccounts extends React.Component {
 
 class ApplicationList extends Component {
   render() {
-    // console.log(this.props.data.listAccounts);
+    console.log('ApplicationList.render');
+    console.log(this.props.loggedIn);
     console.log(this.props.accounts);
-    if (this.props.loggedIn)
+    if (this.props.loggedIn == "signedIn")
     return (
       <>
         <View style={styles.sectionTopContainer}>
